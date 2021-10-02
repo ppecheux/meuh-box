@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'constants.dart' show defaultAlarmAudioPath;
-//import 'package:flutter_emoji/flutter_emoji.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(App());
 }
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-
+class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -85,8 +82,8 @@ class _MyHomePageState extends State<MyHomePage>
       appBar: AppBar(
         title: Text(widget.title!),
       ),
-      body: Center(
-        child: Column(
+      body:Center(
+      child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
@@ -96,7 +93,16 @@ class _MyHomePageState extends State<MyHomePage>
               '$_counter',
               style: Theme.of(context).textTheme.headline4,
             ),
-            Expanded(
+        Expanded(
+          child:
+        ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: 0,
+            minHeight: 0,
+            maxWidth: 250,
+            maxHeight: 250,
+          ),
+
               child: FittedBox(
                 fit: BoxFit.contain,
                 child: RotationTransition(
@@ -106,10 +112,14 @@ class _MyHomePageState extends State<MyHomePage>
                       "🐮",
                     )),
               ),
+              ),
             ),
           ],
-        ),
+          ),
       ),
+
+
+
       floatingActionButton: FloatingActionButton(
         onPressed: _boxClick,
         tooltip: 'Increment',
