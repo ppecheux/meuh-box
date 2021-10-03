@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'constants.dart' show defaultAlarmAudioPath;
+import 'package:sensors_plus/sensors_plus.dart';
 
 void main() {
   runApp(App());
@@ -38,7 +41,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late AnimationController _currentController;
   late AnimationController _controllerUp;
   late AnimationController _controllerDown;
-
+  double? _accelerometerY;
+  List<double>? _accelerometerValues;
+  late StreamSubscription<dynamic> _streamSubscription;
+  bool _isPositiveY = true;
+  //final _streamSubscription = StreamSubscription;
   void _incrementCounter() {
     setState(() {
       _counter++;
@@ -70,6 +77,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     }
   }
 
+  void handleAccelerometerStreamEvent(AccelerometerEvent event) {
+    setState(() {
+      _accelerometerValues = <double>[event.x, event.y, event.z];
+    });
+  }
+
   @override
   void initState() {
     _controllerUp = AnimationController(
@@ -83,17 +96,27 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         lowerBound: 0.5,
         upperBound: 1.0);
     _currentController = _controllerUp;
+    _streamSubscription = accelerometerEvents.listen(
+      (AccelerometerEvent event) {
+        handleAccelerometerStreamEvent(event);
+      },
+    );
     super.initState();
   }
 
   @override
   void dispose() {
     _controllerUp.dispose();
+    _streamSubscription.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final accelerometer =
+        _accelerometerValues?.map((double v) => v.toStringAsFixed(1)).toList();
+    final accelerometerY = accelerometer![1];
+    //final accelerometerY = _accelerometerY.toString();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title!),
@@ -108,6 +131,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headline4,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text('Accelerometer: $accelerometerY'),
+                Text('isPosY: $_isPositiveY')
+              ],
             ),
             Expanded(
               child: ConstrainedBox(
