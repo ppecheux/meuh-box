@@ -1,3 +1,4 @@
+import 'dart:html';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'constants.dart' show defaultAlarmAudioPath;
@@ -23,6 +24,7 @@ class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, this.title}) : super(key: key);
   final audioCache = AudioCache();
   final AudioPlayer audioPlayer = AudioPlayer();
+  final double maxCowSize = 560;
   final String? title;
   late final Future<Uri> futureUri = audioCache.load(defaultAlarmAudioPath);
 
@@ -30,10 +32,13 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage>
-    with SingleTickerProviderStateMixin {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   int _counter = 0;
-  Uri? uri;
+  bool _isCowUp = true;
+  Uri? _uri;
+  late AnimationController _currentController;
+  late AnimationController _controllerUp;
+  late AnimationController _controllerDown;
 
   void _incrementCounter() {
     setState(() {
@@ -42,37 +47,49 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void _boxClick() async {
-    //_make_noise();
-    if (uri == null) {
-      uri = await widget.futureUri;
-      widget.audioPlayer.setUrl(uri.toString());
+    if (_uri == null) {
+      _uri = await widget.futureUri;
+      widget.audioPlayer.setUrl(_uri.toString());
     }
 
     _incrementCounter();
-    if (_controller.isAnimating) {
-      _controller.stop();
-      //widget.audioPlayer.pause();
+    if (_currentController.isAnimating) {
+      _currentController.stop();
+      widget.audioPlayer.pause();
     } else {
-      if (_controller.isCompleted) _controller.reset();
-      _controller.forward();
-      widget.audioPlayer.play(uri.toString(), isLocal: true);
+      if (_currentController.isCompleted) {
+        AnimationController previousController = _currentController;
+
+        setState(() {
+          _isCowUp = !_isCowUp;
+          _currentController = _isCowUp ? _controllerUp : _controllerDown;
+        });
+        previousController.reset();
+      }
+      _currentController.forward();
+      widget.audioPlayer.play(_uri.toString(), isLocal: true);
     }
   }
 
-  late AnimationController _controller;
-
   @override
   void initState() {
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 5000),
-      vsync: this,
-    );
+    _controllerUp = AnimationController(
+        duration: const Duration(milliseconds: 1000),
+        vsync: this,
+        lowerBound: 0.0,
+        upperBound: 0.5);
+    _controllerDown = AnimationController(
+        duration: const Duration(milliseconds: 1000),
+        vsync: this,
+        lowerBound: 0.5,
+        upperBound: 1.0);
+    _currentController = _controllerUp;
     super.initState();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controllerUp.dispose();
     super.dispose();
   }
 
@@ -82,8 +99,8 @@ class _MyHomePageState extends State<MyHomePage>
       appBar: AppBar(
         title: Text(widget.title!),
       ),
-      body:Center(
-      child: Column(
+      body: Center(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
@@ -93,32 +110,30 @@ class _MyHomePageState extends State<MyHomePage>
               '$_counter',
               style: Theme.of(context).textTheme.headline4,
             ),
-        Expanded(
-          child:
-        ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: 0,
-            minHeight: 0,
-            maxWidth: 250,
-            maxHeight: 250,
-          ),
-
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: RotationTransition(
-                    turns: Tween(begin: 0.0, end: 1.0).animate(_controller),
-                    //child: Icon(Icons.expand_less),
-                    child: Text(
-                      "🐮",
-                    )),
-              ),
+            Expanded(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                  maxWidth: widget.maxCowSize,
+                  maxHeight: widget.maxCowSize,
+                ),
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: RotationTransition(
+                    turns:
+                        Tween(begin: 0.0, end: 1.0).animate(_currentController),
+                    child: TextButton(
+                      child: Text("🐮"),
+                      onPressed: _boxClick,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
-          ),
+        ),
       ),
-
-
 
       floatingActionButton: FloatingActionButton(
         onPressed: _boxClick,
