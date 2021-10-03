@@ -1,4 +1,3 @@
-import 'dart:html';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'constants.dart' show defaultAlarmAudioPath;
